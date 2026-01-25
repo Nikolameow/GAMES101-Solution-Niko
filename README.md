@@ -92,9 +92,9 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float z
 
 ### 结果
 
-为了确保没有轴被错误翻转，选了其他不同的点
+为了确保没有轴被错误翻转，选择了其他点来保证图形不是轴对称的
 
-<img src="D:\GithubRepos\GAMES101-Assignment-Niko\MDImages\as1.png" alt="as1" style="zoom:50%;" />
+ <img src="D:\GithubRepos\GAMES101-Solution-Niko\MDImages\as1.png" alt="as1" style="zoom:50%;" />
 
 ## 02 光栅化和Z-buffer
 
@@ -218,6 +218,8 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
 
 ### 结果
 
-<img src="D:\GithubRepos\GAMES101-Assignment-Niko\MDImages\as2_1.png" alt="as2_1" style="zoom:50%;" /><img src="D:\GithubRepos\GAMES101-Assignment-Niko\MDImages\as2_2.png" alt="as2_2" style="zoom:50%;" />
+ <img src="D:\GithubRepos\GAMES101-Solution-Niko\MDImages\as2_1.png" alt="as2_1" style="zoom: 33%;" />
+
+![as2_3](D:\GithubRepos\GAMES101-Solution-Niko\MDImages\as2_3.jpeg) ![as2_4](D:\GithubRepos\GAMES101-Solution-Niko\MDImages\as2_4.jpeg)
 
 右图蓝色三角形上侧的白边锯齿改进明显
