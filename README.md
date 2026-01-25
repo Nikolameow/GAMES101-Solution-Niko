@@ -220,6 +220,8 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
 
  <img src=".\MDImages\as2_1.png" alt="as2_1" style="zoom: 33%;" />
 
-![as2_3](.\MDImages\as2_3.jpeg) ![as2_4](.\MDImages\as2_4.jpeg)
+<img src=".\MDImages\as2_3.jpeg" alt="as2_3" style="zoom: 80%;" /> <img src=".\MDImages\as2_4.jpeg" alt="as2_4" style="zoom:80%;" />
 
 右图蓝色三角形上侧的白边锯齿改进明显
+
+## 03 着色器
