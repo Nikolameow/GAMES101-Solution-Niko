@@ -81,8 +81,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ReferencePath>$(ReferencePath)</ReferencePath>
-    <IncludePath>D:\GithubRepos\GAMES101-Assignment-Niko;D:\GithubRepos\GAMES101-Assignment-Niko\opencv\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\GithubRepos\GAMES101-Assignment-Niko\opencv\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\GithubRepos\GAMES101-Solution-Niko;D:\GithubRepos\GAMES101-Solution-Niko\opencv\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\GithubRepos\GAMES101-Solution-Niko\opencv\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -116,7 +116,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\GithubRepos\GAMES101-Solution-Niko\opencv\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
