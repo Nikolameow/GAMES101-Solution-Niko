@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <opencv2/opencv.hpp>
 
 #include "global.hpp"
@@ -49,10 +49,32 @@ Eigen::Matrix4f get_model_matrix(float angle)
 
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar)
 {
-    // TODO: Use the same projection matrix from the previous assignments
-	Eigen::Matrix4f projection;
-
-	return projection;
+    Eigen::Matrix4f projection = Eigen::Matrix4f::Identity();
+    float n = -zNear, f = -zFar;
+    // 透视投影->正交投影  挤压
+    Eigen::Matrix4f Mpersp_orhtho;
+    Mpersp_orhtho << n, 0, 0, 0,
+        0, n, 0, 0,
+        0, 0, n + f, -n * f,
+        0, 0, 1, 0;
+    // 正交投影->正则立方体
+    float fovY = eye_fov / 180 * MY_PI;// 角度转弧度
+    float t = tan(fovY / 2) * zNear, b = -t;// 
+    float r = aspect_ratio * t, l = -r;
+    // 转换到正则立方体
+    Eigen::Matrix4f Mortho, Mtrans, Mscale;
+    Mtrans << 1, 0, 0, -(r + l) / 2,
+        0, 1, 0, -(t + b) / 2,
+        0, 0, 1, -(n + f) / 2,
+        0, 0, 0, 1;
+    Mscale << 2 / (r - l), 0, 0, 0,
+        0, 2 / (t - b), 0, 0,
+        0, 0, 2 / (f - n), 0, // 注意符号，是far - near（负值），实现反向映射。更远的点映射达到1，更近的点映射到-1
+        0, 0, 0, 1;
+    Mortho = Mscale * Mtrans;
+    // 计算得到投影矩阵
+    projection = Mortho * Mpersp_orhtho;
+    return projection;
 }
 
 Eigen::Vector3f vertex_shader(const vertex_shader_payload& payload)
@@ -142,10 +164,18 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
     Eigen::Vector3f result_color = {0, 0, 0};
     for (auto& light : lights)
     {
-        // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
-        // components are. Then, accumulate that result on the *result_color* object.
-        
+        // Lambertian (Diffuse) Term
+		float r = (light.position - point).norm();
+		Eigen::Vector3f l = (light.position - point).normalized();
+		result_color += kd.cwiseProduct(light.intensity / (r * r)) * std::max(0.f, normal.dot(l));
+
+        // Specular Term
+		Vector3f v = (eye_pos - point).normalized();
+		Vector3f h = (l + v).normalized();
+        result_color += ks.cwiseProduct(light.intensity / (r * r)) * std::pow(std::max(0.f, normal.dot(h)), p);
     }
+    // Ambient Term
+    result_color += ka.cwiseProduct(amb_light_intensity);
 
     return result_color * 255.f;
 }

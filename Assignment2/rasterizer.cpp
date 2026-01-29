@@ -179,8 +179,8 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
                     float z_interpolated = alpha / v[0].w() * v[0].z() + beta / v[1].w() * v[1].z() + gamma / v[2].w() * v[2].z();
                     z_interpolated *= w_reciprocal;
 
-                    if (z_interpolated < depth_buf[get_index(x, y)]) {
-                        depth_buf[get_index(x, y)] = z_interpolated;
+                    if (w_reciprocal < depth_buf[get_index(x, y)]) {
+                        depth_buf[get_index(x, y)] = w_reciprocal;
                         // set the current pixel (use the set_pixel function) to the color of the triangle (use getColor function) if it should be painted.
                         set_pixel(Eigen::Vector3f(x, y, 1), t.getColor());
                     }
