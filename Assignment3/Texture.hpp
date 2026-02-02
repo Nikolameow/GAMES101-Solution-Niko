@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by LEI XU on 4/27/19.
 //
 
@@ -24,6 +24,8 @@ public:
 
     Eigen::Vector3f getColor(float u, float v)
     {
+        u = std::max(0.0f, std::min(1.0f, u));
+        v = std::max(0.0f, std::min(1.0f, v));
         auto u_img = u * width;
         auto v_img = (1 - v) * height;
         auto color = image_data.at<cv::Vec3b>(v_img, u_img);

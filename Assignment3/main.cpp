@@ -108,6 +108,7 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
     if (payload.texture)
     {
         // TODO: Get the texture value at the texture coordinates of the current fragment
+		return_color = payload.texture->getColor(payload.tex_coords.x(), payload.tex_coords.y());
 
     }
     Eigen::Vector3f texture_color;
@@ -131,13 +132,20 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
     Eigen::Vector3f normal = payload.normal;
 
     Eigen::Vector3f result_color = {0, 0, 0};
-
     for (auto& light : lights)
     {
-        // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
-        // components are. Then, accumulate that result on the *result_color* object.
+        // Lambertian (Diffuse) Term
+        float r = (light.position - point).norm();
+        Eigen::Vector3f l = (light.position - point).normalized();
+        result_color += kd.cwiseProduct(light.intensity / (r * r)) * std::max(0.f, normal.dot(l));
 
+        // Specular Term
+        Eigen::Vector3f v = (eye_pos - point).normalized();
+        Eigen::Vector3f h = (l + v).normalized();
+        result_color += ks.cwiseProduct(light.intensity / (r * r)) * std::pow(std::max(0.f, normal.dot(h)), p);
     }
+    // Ambient Term
+    result_color += ka.cwiseProduct(amb_light_intensity);
 
     return result_color * 255.f;
 }
@@ -148,7 +156,7 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
     Eigen::Vector3f kd = payload.color;
     Eigen::Vector3f ks = Eigen::Vector3f(0.7937, 0.7937, 0.7937);
 
-    auto l1 = light{{20, 20, 20}, {500, 500, 500}};
+    auto l1 = light{{20, 20, 20}, {1000, 1000, 1000}};
     auto l2 = light{{-20, 20, 0}, {500, 500, 500}};
 
     std::vector<light> lights = {l1, l2};
@@ -170,12 +178,13 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
 		result_color += kd.cwiseProduct(light.intensity / (r * r)) * std::max(0.f, normal.dot(l));
 
         // Specular Term
-		Vector3f v = (eye_pos - point).normalized();
-		Vector3f h = (l + v).normalized();
+		Eigen::Vector3f v = (eye_pos - point).normalized();
+		Eigen::Vector3f h = (l + v).normalized();
         result_color += ks.cwiseProduct(light.intensity / (r * r)) * std::pow(std::max(0.f, normal.dot(h)), p);
     }
     // Ambient Term
     result_color += ka.cwiseProduct(amb_light_intensity);
+
 
     return result_color * 255.f;
 }
@@ -300,10 +309,10 @@ int main(int argc, const char** argv)
 
     rst::rasterizer r(700, 700);
 
-    auto texture_path = "hmap.jpg";
+    auto texture_path = "spot_texture.png";
     r.set_texture(Texture(obj_path + texture_path));
 
-    std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = phong_fragment_shader;
+    std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = bump_fragment_shader;
 
     if (argc >= 2)
     {
