@@ -225,3 +225,276 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
 右图蓝色三角形上侧的白边锯齿改进明显
 
 ## 03 着色器
+
+> VERTEX SHADER -> MVP -> Clipping -> /.W -> VIEWPORT -> DRAWLINE/DRAWTRI -> FRAGSHADER
+
+### Vertex Shader
+
+```c++
+Eigen::Vector3f vertex_shader(const vertex_shader_payload& payload)
+{
+    return payload.position;
+}
+```
+
+### Normal Fragment Shader
+
+```c++
+Eigen::Vector3f normal_fragment_shader(const fragment_shader_payload& payload)
+{
+    Eigen::Vector3f return_color = (payload.normal.head<3>().normalized() + Eigen::Vector3f(1.0f, 1.0f, 1.0f)) / 2.f;
+    Eigen::Vector3f result;
+    result << return_color.x() * 255, return_color.y() * 255, return_color.z() * 255;
+    return result;
+}
+```
+
+<img src=".\MDImages\normal.png" alt="normal" style="zoom:50%;" />
+
+### Phong Fragment Shader
+
+```c++
+{
+    Eigen::Vector3f ka = Eigen::Vector3f(0.005, 0.005, 0.005);
+    Eigen::Vector3f kd = payload.color;
+    Eigen::Vector3f ks = Eigen::Vector3f(0.7937, 0.7937, 0.7937);
+
+    auto l1 = light{{20, 20, 20}, {1000, 1000, 1000}};
+    auto l2 = light{{-20, 20, 0}, {500, 500, 500}};
+
+    std::vector<light> lights = {l1, l2};
+    Eigen::Vector3f amb_light_intensity{10, 10, 10};
+    Eigen::Vector3f eye_pos{0, 0, 0};
+
+    float p = 150;
+
+    Eigen::Vector3f color = payload.color;
+    Eigen::Vector3f point = payload.view_pos;
+    Eigen::Vector3f normal = payload.normal;
+
+    Eigen::Vector3f result_color = {0, 0, 0};
+    for (auto& light : lights)
+    {
+        // Lambertian (Diffuse) Term
+		float r = (light.position - point).norm();
+		Eigen::Vector3f l = (light.position - point).normalized();
+		result_color += kd.cwiseProduct(light.intensity / (r * r)) * std::max(0.f, normal.dot(l));
+
+        // Specular Term
+		Eigen::Vector3f v = (eye_pos - point).normalized();
+		Eigen::Vector3f h = (l + v).normalized();
+        result_color += ks.cwiseProduct(light.intensity / (r * r)) * std::pow(std::max(0.f, normal.dot(h)), p);
+    }
+    // Ambient Term
+    result_color += ka.cwiseProduct(amb_light_intensity);
+
+    return result_color * 255.f;
+}
+```
+
+<img src=".\MDImages\phong.png" alt="phong" style="zoom:50%;" />
+
+### Texture Fragment Shader
+
+```c++
+Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
+{
+    Eigen::Vector3f return_color = {0, 0, 0};
+    if (payload.texture)
+    {
+        // TODO: Get the texture value at the texture coordinates of the current fragment
+		return_color = payload.texture->getColor(payload.tex_coords.x(), payload.tex_coords.y());
+
+    }
+    Eigen::Vector3f texture_color;
+    texture_color << return_color.x(), return_color.y(), return_color.z();
+
+    Eigen::Vector3f ka = Eigen::Vector3f(0.005, 0.005, 0.005);
+    Eigen::Vector3f kd = texture_color / 255.f;
+    Eigen::Vector3f ks = Eigen::Vector3f(0.7937, 0.7937, 0.7937);
+
+    auto l1 = light{{20, 20, 20}, {500, 500, 500}};
+    auto l2 = light{{-20, 20, 0}, {500, 500, 500}};
+
+    std::vector<light> lights = {l1, l2};
+    Eigen::Vector3f amb_light_intensity{10, 10, 10};
+    Eigen::Vector3f eye_pos{0, 0, 0};
+
+    float p = 150;
+
+    Eigen::Vector3f color = texture_color;
+    Eigen::Vector3f point = payload.view_pos;
+    Eigen::Vector3f normal = payload.normal;
+
+    Eigen::Vector3f result_color = {0, 0, 0};
+    for (auto& light : lights)
+    {
+        // Lambertian (Diffuse) Term
+        float r = (light.position - point).norm();
+        Eigen::Vector3f l = (light.position - point).normalized();
+        result_color += kd.cwiseProduct(light.intensity / (r * r)) * std::max(0.f, normal.dot(l));
+
+        // Specular Term
+        Eigen::Vector3f v = (eye_pos - point).normalized();
+        Eigen::Vector3f h = (l + v).normalized();
+        result_color += ks.cwiseProduct(light.intensity / (r * r)) * std::pow(std::max(0.f, normal.dot(h)), p);
+    }
+    // Ambient Term
+    result_color += ka.cwiseProduct(amb_light_intensity);
+
+    return result_color * 255.f;
+}
+```
+
+<img src=".\MDImages\texture.png" alt="texture" style="zoom:50%;" />
+
+### Bump Fragement Shader 凹凸贴图
+
+```c++
+Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload& payload)
+{
+    
+    Eigen::Vector3f ka = Eigen::Vector3f(0.005, 0.005, 0.005);
+    Eigen::Vector3f kd = payload.color;
+    Eigen::Vector3f ks = Eigen::Vector3f(0.7937, 0.7937, 0.7937);
+
+    auto l1 = light{{20, 20, 20}, {500, 500, 500}};
+    auto l2 = light{{-20, 20, 0}, {500, 500, 500}};
+
+    std::vector<light> lights = {l1, l2};
+    Eigen::Vector3f amb_light_intensity{10, 10, 10};
+    Eigen::Vector3f eye_pos{0, 0, 0};
+
+    float p = 150;
+
+    Eigen::Vector3f color = payload.color; 
+    Eigen::Vector3f point = payload.view_pos;
+    Eigen::Vector3f normal = payload.normal;
+
+
+    float kh = 0.2, kn = 0.1;
+
+    // TODO: Implement bump mapping here
+    // Let n = normal = (x, y, z)
+    // Vector t = (x*y/sqrt(x*x+z*z),sqrt(x*x+z*z),z*y/sqrt(x*x+z*z))
+    // Vector b = n cross product t
+    // Matrix TBN = [t b n]
+    // dU = kh * kn * (h(u+1/w,v)-h(u,v))
+    // dV = kh * kn * (h(u,v+1/h)-h(u,v))
+    // Vector ln = (-dU, -dV, 1)
+    // Normal n = normalize(TBN * ln)
+
+    float x = normal.x();
+    float y = normal.y();
+    float z = normal.z();
+
+	Eigen::Vector3f t = { x * y / sqrt(x * x + z * z), sqrt(x * x + z * z), z * y / sqrt(x * x + z * z) };
+	Eigen::Vector3f b = normal.cross(t);
+
+    Eigen::Matrix3f TBN;
+    TBN << t, b, normal;
+
+    float u = payload.tex_coords.x();
+	float v = payload.tex_coords.y();
+	float w = payload.texture->width;
+	float h = payload.texture->height;
+
+	float dU = kh * kn * (payload.texture->getColor(u + 1.0f / w, v).norm() - payload.texture->getColor(u, v).norm());
+	float dV = kh * kn * (payload.texture->getColor(u, v + 1.0f / h).norm() - payload.texture->getColor(u, v).norm());
+
+	Eigen::Vector3f ln = Eigen::Vector3f(-dU, -dV, 1.0f);
+	normal = (TBN * ln).normalized();
+
+    Eigen::Vector3f result_color = {0, 0, 0};
+    result_color = normal;
+
+    return result_color * 255.f;
+}
+```
+
+<img src=".\MDImages\bump.png" alt="bump" style="zoom:50%;" />
+
+### Displacement Fragment Shader 位移贴图
+
+```c++
+Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload& payload)
+{
+    
+    Eigen::Vector3f ka = Eigen::Vector3f(0.005, 0.005, 0.005);
+    Eigen::Vector3f kd = payload.color;
+    Eigen::Vector3f ks = Eigen::Vector3f(0.7937, 0.7937, 0.7937);
+
+    auto l1 = light{{20, 20, 20}, {500, 500, 500}};
+    auto l2 = light{{-20, 20, 0}, {500, 500, 500}};
+
+    std::vector<light> lights = {l1, l2};
+    Eigen::Vector3f amb_light_intensity{10, 10, 10};
+    Eigen::Vector3f eye_pos{0, 0, 0};
+
+    float p = 150;
+
+    Eigen::Vector3f color = payload.color; 
+    Eigen::Vector3f point = payload.view_pos;
+    Eigen::Vector3f normal = payload.normal;
+
+    float kh = 0.2, kn = 0.1;
+    
+    // TODO: Implement displacement mapping here
+    // Let n = normal = (x, y, z)
+    // Vector t = (x*y/sqrt(x*x+z*z),sqrt(x*x+z*z),z*y/sqrt(x*x+z*z))
+    // Vector b = n cross product t
+    // Matrix TBN = [t b n]
+    // dU = kh * kn * (h(u+1/w,v)-h(u,v))
+    // dV = kh * kn * (h(u,v+1/h)-h(u,v))
+    // Vector ln = (-dU, -dV, 1)
+    // Position p = p + kn * n * h(u,v)
+    // Normal n = normalize(TBN * ln)
+
+    float x = normal.x();
+    float y = normal.y();
+    float z = normal.z();
+
+    Eigen::Vector3f t = { x * y / sqrt(x * x + z * z), sqrt(x * x + z * z), z * y / sqrt(x * x + z * z) };
+    Eigen::Vector3f b = normal.cross(t);
+
+    Eigen::Matrix3f TBN;
+    TBN << t, b, normal;
+
+    float u = payload.tex_coords.x();
+    float v = payload.tex_coords.y();
+    float w = payload.texture->width;
+    float h = payload.texture->height;
+
+    float dU = kh * kn * (payload.texture->getColor(u + 1.0f / w, v).norm() - payload.texture->getColor(u, v).norm());
+    float dV = kh * kn * (payload.texture->getColor(u, v + 1.0f / h).norm() - payload.texture->getColor(u, v).norm());
+
+    Eigen::Vector3f ln = Eigen::Vector3f(-dU, -dV, 1.0f);
+
+    // 描述点在凹凸变化中的位移
+	point += kn * normal * payload.texture->getColor(u, v).norm();
+
+    normal = (TBN * ln).normalized();
+
+
+    Eigen::Vector3f result_color = {0, 0, 0};
+
+    for (auto& light : lights)
+    {
+        // Lambertian (Diffuse) Term
+        float r = (light.position - point).norm();
+        Eigen::Vector3f l = (light.position - point).normalized();
+        result_color += kd.cwiseProduct(light.intensity / (r * r)) * std::max(0.f, normal.dot(l));
+
+        // Specular Term
+        Eigen::Vector3f v = (eye_pos - point).normalized();
+        Eigen::Vector3f h = (l + v).normalized();
+        result_color += ks.cwiseProduct(light.intensity / (r * r)) * std::pow(std::max(0.f, normal.dot(h)), p);
+    }
+    // Ambient Term
+    result_color += ka.cwiseProduct(amb_light_intensity);
+
+    return result_color * 255.f;
+}
+```
+
+<img src=".\MDImages\displacement.png" alt="displacement" style="zoom:50%;" />
