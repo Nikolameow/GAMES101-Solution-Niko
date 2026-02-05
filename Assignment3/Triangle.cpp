@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by LEI XU on 4/11/19.
 //
 
@@ -40,13 +40,6 @@ void Triangle::setColor(int ind, float r, float g, float b) {
 }
 void Triangle::setTexCoord(int ind, Vector2f uv) {
     tex_coords[ind] = uv;
-}
-
-std::array<Vector4f, 3> Triangle::toVector4() const
-{
-    std::array<Vector4f, 3> res;
-    std::transform(std::begin(v), std::end(v), res.begin(), [](auto& vec) { return Vector4f(vec.x(), vec.y(), vec.z(), 1.f); });
-    return res;
 }
 
 void Triangle::setNormals(const std::array<Vector3f, 3>& normals)

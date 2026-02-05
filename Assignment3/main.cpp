@@ -313,6 +313,8 @@ Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload& payload)
     Eigen::Matrix3f TBN;
     TBN << t, b, normal;
 
+
+    // 利用了texture的高度信息
     float u = payload.tex_coords.x();
 	float v = payload.tex_coords.y();
 	float w = payload.texture->width;

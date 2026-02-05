@@ -259,7 +259,7 @@ static Eigen::Vector2f interpolate(float alpha, float beta, float gamma, const E
 //Screen space rasterization
 void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eigen::Vector3f, 3>& view_pos) 
 {
-    auto v = t.toVector4();
+    auto v = t.v;
 
     // Find out the bounding box of current triangle.
 
