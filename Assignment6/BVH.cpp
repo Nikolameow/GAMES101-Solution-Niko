@@ -1,4 +1,4 @@
-#include <algorithm>
+﻿#include <algorithm>
 #include <cassert>
 #include "BVH.hpp"
 
@@ -104,8 +104,30 @@ Intersection BVHAccel::Intersect(const Ray& ray) const
 
 Intersection BVHAccel::getIntersection(BVHBuildNode* node, const Ray& ray) const
 {
-    // TODO Traverse the BVH to find intersection
+    if (!node) return {};
 
-    Intersection result;
-    return result;
+    std::array<int, 3> dirIsNeg = {
+        ray.direction.x > 0,
+        ray.direction.y > 0,
+        ray.direction.z > 0
+    };
+
+    // 光线未命中包围盒，直接返回
+    if (!node->bounds.IntersectP(ray, ray.direction_inv, dirIsNeg))
+        return {};
+
+    // 叶子节点：直接与物体求交
+    if (!node->left && !node->right)
+        return node->object->getIntersection(ray);
+
+    // 内部节点：递归左右子树，取更近的交点
+    Intersection leftHit = getIntersection(node->left, ray);
+    Intersection rightHit = getIntersection(node->right, ray);
+
+    if (leftHit.happened && rightHit.happened)
+        return leftHit.distance < rightHit.distance ? leftHit : rightHit;
+    else if (leftHit.happened)
+        return leftHit;
+    else
+        return rightHit;
 }

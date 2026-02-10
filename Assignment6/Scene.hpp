@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by Göksu Güvendiren on 2019-05-14.
 //
 
@@ -12,6 +12,8 @@
 #include "BVH.hpp"
 #include "Ray.hpp"
 
+enum SplitMode { NORM, BVH, SVH };
+extern SplitMode splitMode;  // 声明
 
 class Scene
 {
@@ -32,10 +34,10 @@ public:
     const std::vector<Object*>& get_objects() const { return objects; }
     const std::vector<std::unique_ptr<Light> >&  get_lights() const { return lights; }
     Intersection intersect(const Ray& ray) const;
-    BVHAccel *bvh;
+    BVHAccel *bvh = nullptr;
     void buildBVH();
     Vector3f castRay(const Ray &ray, int depth) const;
-    bool trace(const Ray &ray, const std::vector<Object*> &objects, float &tNear, uint32_t &index, Object **hitObject);
+    bool trace(const Ray &ray, const std::vector<Object*> &objects, float &tNear, uint32_t &index, Object **hitObject) const;
     std::tuple<Vector3f, Vector3f> HandleAreaLight(const AreaLight &light, const Vector3f &hitPoint, const Vector3f &N,
                                                    const Vector3f &shadowPointOrig,
                                                    const std::vector<Object *> &objects, uint32_t &index,

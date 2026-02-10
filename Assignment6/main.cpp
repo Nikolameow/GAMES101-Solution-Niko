@@ -1,4 +1,4 @@
-#include "Renderer.hpp"
+﻿#include "Renderer.hpp"
 #include "Scene.hpp"
 #include "Triangle.hpp"
 #include "Vector.hpp"
@@ -9,16 +9,21 @@
 // lights) as well as set the options for the render (image width and height,
 // maximum recursion depth, field-of-view, etc.). We then call the render
 // function().
+
+SplitMode splitMode = BVH;
+
 int main(int argc, char** argv)
 {
     Scene scene(1280, 960);
+	
 
     MeshTriangle bunny("../models/bunny/bunny.obj");
 
     scene.Add(&bunny);
     scene.Add(std::make_unique<Light>(Vector3f(-20, 70, 20), 1));
     scene.Add(std::make_unique<Light>(Vector3f(20, 70, 20), 1));
-    scene.buildBVH();
+    
+	scene.buildBVH();
 
     Renderer r;
 

@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by LEI XU on 5/13/19.
 //
 
@@ -9,6 +9,8 @@
 #include "Vector.hpp"
 #include "Bounds3.hpp"
 #include "Material.hpp"
+
+
 
 class Sphere : public Object{
 public:

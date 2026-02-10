@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by LEI XU on 5/16/19.
 //
 
@@ -34,7 +34,6 @@ public:
 
     Intersection Intersect(const Ray &ray) const;
     Intersection getIntersection(BVHBuildNode* node, const Ray& ray)const;
-    bool IntersectP(const Ray &ray) const;
     BVHBuildNode* root;
 
     // BVHAccel Private Methods

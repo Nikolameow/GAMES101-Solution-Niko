@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by LEI XU on 5/16/19.
 //
 
@@ -96,7 +96,27 @@ inline bool Bounds3::IntersectP(const Ray& ray, const Vector3f& invDir,
     // invDir: ray direction(x,y,z), invDir=(1.0/x,1.0/y,1.0/z), use this because Multiply is faster that Division
     // dirIsNeg: ray direction(x,y,z), dirIsNeg=[int(x>0),int(y>0),int(z>0)], use this to simplify your logic
     // TODO test if ray bound intersects
-    
+
+	float txmin, txmax, tymin, tymax, tzmin, tzmax;
+    float tenter, texit;
+
+    txmin = (pMin.x - ray.origin.x) * invDir.x;
+    txmax = (pMax.x - ray.origin.x) * invDir.x;
+    if (!dirIsNeg[0]) std::swap(txmin, txmax);
+
+    tymin = (pMin.y - ray.origin.y) * invDir.y;
+    tymax = (pMax.y - ray.origin.y) * invDir.y;
+    if (!dirIsNeg[1]) std::swap(tymin, tymax);
+
+    tzmin = (pMin.z - ray.origin.z) * invDir.z;
+    tzmax = (pMax.z - ray.origin.z) * invDir.z;
+    if (!dirIsNeg[2]) std::swap(tzmin, tzmax);
+
+    // Find the largest entering and smallest exiting
+    tenter = fmax(fmax(txmin, tymin), tzmin);
+    texit = fmin(fmin(txmax, tymax), tzmax);
+
+    return (tenter < texit && texit > 0);
 }
 
 inline Bounds3 Union(const Bounds3& b1, const Bounds3& b2)
