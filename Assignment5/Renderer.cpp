@@ -1,4 +1,4 @@
-#include <fstream>
+﻿#include <fstream>
 #include "Vector.hpp"
 #include "Renderer.hpp"
 #include "Scene.hpp"
@@ -80,9 +80,7 @@ float fresnel(const Vector3f &I, const Vector3f &N, const float &ior)
 // \param[out] *hitObject stores the pointer to the intersected object (used to retrieve material information, etc.)
 // \param isShadowRay is it a shadow ray. We can return from the function sooner as soon as we have found a hit.
 // [/comment]
-std::optional<hit_payload> trace(
-        const Vector3f &orig, const Vector3f &dir,
-        const std::vector<std::unique_ptr<Object> > &objects)
+std::optional<hit_payload> trace(const Vector3f &orig, const Vector3f &dir, const std::vector<std::unique_ptr<Object> > &objects)
 {
     float tNear = kInfinity;
     std::optional<hit_payload> payload;
@@ -135,6 +133,7 @@ Vector3f castRay(
         Vector3f hitPoint = orig + dir * payload->tNear;
         Vector3f N; // normal
         Vector2f st; // st coordinates
+		// payload保存了碰撞信息，我们通过调用getSurfaceProperties函数来获取交点的法线和纹理坐标等信息
         payload->hit_obj->getSurfaceProperties(hitPoint, dir, payload->index, payload->uv, N, st);
         switch (payload->hit_obj->materialType) {
             case REFLECTION_AND_REFRACTION:
@@ -153,6 +152,7 @@ Vector3f castRay(
                 hitColor = reflectionColor * kr + refractionColor * (1 - kr);
                 break;
             }
+
             case REFLECTION:
             {
                 float kr = fresnel(dir, N, payload->hit_obj->ior);
@@ -163,20 +163,18 @@ Vector3f castRay(
                 hitColor = castRay(reflectionRayOrig, reflectionDirection, scene, depth + 1) * kr;
                 break;
             }
+
             default:
             {
-                // [comment]
                 // We use the Phong illumation model int the default case. The phong model
                 // is composed of a diffuse and a specular reflection component.
-                // [/comment]
                 Vector3f lightAmt = 0, specularColor = 0;
+                // 防止自相交
                 Vector3f shadowPointOrig = (dotProduct(dir, N) < 0) ?
                                            hitPoint + N * scene.epsilon :
                                            hitPoint - N * scene.epsilon;
-                // [comment]
                 // Loop over all lights in the scene and sum their contribution up
                 // We also apply the lambert cosine law
-                // [/comment]
                 for (auto& light : scene.get_lights()) {
                     Vector3f lightDir = light->position - hitPoint;
                     // square of the distance between hitPoint and the light
@@ -184,17 +182,18 @@ Vector3f castRay(
                     lightDir = normalize(lightDir);
                     float LdotN = std::max(0.f, dotProduct(lightDir, N));
                     // is the point in shadow, and is the nearest occluding object closer to the object than the light itself?
+                    // 之所以获得shadowPoingOrig就是防止投射光线时与自身产生相交
                     auto shadow_res = trace(shadowPointOrig, lightDir, scene.get_objects());
                     bool inShadow = shadow_res && (shadow_res->tNear * shadow_res->tNear < lightDistance2);
 
                     lightAmt += inShadow ? 0 : light->intensity * LdotN;
                     Vector3f reflectionDirection = reflect(-lightDir, N);
 
-                    specularColor += powf(std::max(0.f, -dotProduct(reflectionDirection, dir)),
+                    specularColor += inShadow ? 0 : powf(std::max(0.f, -dotProduct(reflectionDirection, dir)),
                         payload->hit_obj->specularExponent) * light->intensity;
                 }
 
-                hitColor = lightAmt * payload->hit_obj->evalDiffuseColor(st) * payload->hit_obj->Kd + specularColor * payload->hit_obj->Ks;
+                hitColor = (lightAmt * payload->hit_obj->evalDiffuseColor(st) * payload->hit_obj->Kd) + (specularColor * payload->hit_obj->Ks);
                 break;
             }
         }
@@ -223,21 +222,23 @@ void Renderer::Render(const Scene& scene)
         for (int i = 0; i < scene.width; ++i)
         {
             // generate primary ray direction
-            float x = 0;
-            float y = 0;
             // TODO: Find the x and y positions of the current pixel to get the direction
             // vector that passes through it.
             // Also, don't forget to multiply both of them with the variable *scale*, and
-            // x (horizontal) variable with the *imageAspectRatio*            
+            // x (horizontal) variable with the *imageAspectRatio*       
 
-            Vector3f dir = Vector3f(x, y, -1); // Don't forget to normalize this direction!
+            float x = (2 * (i + 0.5) / (float)scene.width - 1) * imageAspectRatio * scale;
+            float y = (1 - 2 * (j + 0.5) / (float)scene.height) * scale;
+
+            Vector3f dir = normalize(Vector3f(x, y, -1)); // Don't forget to normalize this direction!
+        
             framebuffer[m++] = castRay(eye_pos, dir, scene, 0);
         }
         UpdateProgress(j / (float)scene.height);
     }
 
     // save framebuffer to file
-    FILE* fp = fopen("binary.ppm", "wb");
+    FILE* fp = fopen("output.ppm", "wb");
     (void)fprintf(fp, "P6\n%d %d\n255\n", scene.width, scene.height);
     for (auto i = 0; i < scene.height * scene.width; ++i) {
         static unsigned char color[3];

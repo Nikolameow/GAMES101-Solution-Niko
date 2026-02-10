@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object.hpp"
 
@@ -11,6 +11,21 @@ bool rayTriangleIntersect(const Vector3f& v0, const Vector3f& v1, const Vector3f
     // that's specified bt v0, v1 and v2 intersects with the ray (whose
     // origin is *orig* and direction is *dir*)
     // Also don't forget to update tnear, u and v.
+
+	Vector3f e1 = v1 - v0;
+	Vector3f e2 = v2 - v0;
+	Vector3f s = orig - v0;
+	Vector3f s1 = crossProduct(dir, e2);
+	Vector3f s2 = crossProduct(s, e1);
+	Vector3f res = Vector3f(dotProduct(s2, e2), dotProduct(s1, s), dotProduct(s2, dir)) / dotProduct(s1, e1);
+    if (res.x > 0 && res.y >= 0 && res.z >= 0 && res.y + res.z <= 1)
+    {
+        tnear = res.x;
+        u = res.y;
+        v = res.z;
+        return true;
+    }
+
     return false;
 }
 
@@ -75,7 +90,7 @@ public:
     {
         float scale = 5;
         float pattern = (fmodf(st.x * scale, 1) > 0.5) ^ (fmodf(st.y * scale, 1) > 0.5);
-        return lerp(Vector3f(0.815, 0.235, 0.031), Vector3f(0.937, 0.937, 0.231), pattern);
+        return lerp(Vector3f(0.815, 0, 0), Vector3f(0, 0.937, 0), pattern);
     }
 
     std::unique_ptr<Vector3f[]> vertices;
