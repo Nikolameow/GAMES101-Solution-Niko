@@ -604,6 +604,8 @@ void bezier(const std::vector<cv::Point2f> &control_points, cv::Mat &window)
 
 ## 05 光线追踪
 
+![compare](D:.\MDImages\outputTrace.png)
 
+## 06 BVH加速
 
-## 06 BVH优化
+![compare](D:.\MDImages\outputBVH.png)

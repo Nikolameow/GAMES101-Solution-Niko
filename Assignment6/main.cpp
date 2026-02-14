@@ -10,8 +10,6 @@
 // maximum recursion depth, field-of-view, etc.). We then call the render
 // function().
 
-SplitMode splitMode = BVH;
-
 int main(int argc, char** argv)
 {
     Scene scene(1280, 960);

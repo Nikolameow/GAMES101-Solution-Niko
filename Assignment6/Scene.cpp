@@ -7,7 +7,7 @@
 
 void Scene::buildBVH() {
     printf(" - Generating BVH...\n\n");
-    this->bvh = new BVHAccel(objects, 1, BVHAccel::SplitMethod::NAIVE);
+    this->bvh = new BVHAccel(objects, 1, BVHAccel::SplitMethod::SAH);
 }
 
 
@@ -69,7 +69,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
         Vector3f N = intersection.normal; // normal
         Vector2f st; // st coordinates
         hitObject->getSurfaceProperties(hitPoint, ray.direction, index, uv, N, st);
-//        Vector3f tmp = hitPoint;
+        //Vector3f tmp = hitPoint;
         switch (m->getType()) {
             case REFLECTION_AND_REFRACTION:
             {
